@@ -1,5 +1,6 @@
 import React from 'react';
 import { Container, Grid, Typography, Box, Button } from '@mui/material';
+import { Link as RouterLink} from "react-router-dom";
 
 const HomePage = () => {
     return (
@@ -37,12 +38,14 @@ const HomePage = () => {
                         </Typography>
 
                         <Button
+                            component = {RouterLink}
+                            to = "/signup"
                             variant="contained"
                             size="large"
                             disableElevation // gives button a little pop
                             sx={{ borderRadius: 0, px: 4 }}
                         >
-                            Start Shopping
+                        Start Planning 
                         </Button>
                     </Box>
                 </Grid>
