@@ -12,6 +12,7 @@ const HomePage = () => {
                 sx={{ minHeight: '100vh' }}
             >
                 {/* Left Side - Title */}
+                <div id="here">
                 <Grid size={{ xs: 12, md: 7 }}>
                     <Typography
                         variant="h1"
@@ -21,6 +22,7 @@ const HomePage = () => {
                         Diet <br /> Dude.
                     </Typography>
                 </Grid>
+                </div>
 
                 {/* Bio */}
                 <Grid size={{ xs: 12, md: 5 }}>
