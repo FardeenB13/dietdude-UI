@@ -1,5 +1,5 @@
-import { Box, Typography, Avatar, Button, Card, CardContent, Chip, 
-        Divider, IconButton, InputAdornment, Stack, TextField,
+import { Box, Typography, Avatar, Button, Card, CardContent, Chip,
+        InputAdornment, Stack, TextField,
         Paper, } from "@mui/material"
 
 import AddIcon from "@mui/icons-material/Add";
@@ -8,9 +8,32 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 
 import React, { useState } from 'react';
+import { api, type Recipe } from "./api";
 
 export default function DietDudeDashboard() {
-  
+  const [searchText, setSearchText] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGeneratePlan = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await api.listRecipes({
+        search: searchText || prompt,
+      });
+      setRecipes(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load recipes.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -144,6 +167,8 @@ export default function DietDudeDashboard() {
                     fullWidth
                     placeholder="Search meal plans, ingredients, restrictions, or recipes"
                     variant="outlined"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -171,6 +196,8 @@ export default function DietDudeDashboard() {
                       multiline
                       minRows={4}
                       placeholder="Example: I need 5 affordable dinners that are vegetarian, nut-free, and under $80 total."
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
                       sx={{
                         "& .MuiOutlinedInput-root": {
                           alignItems: "flex-start",
@@ -192,6 +219,8 @@ export default function DietDudeDashboard() {
                       <Button
                         endIcon={<SendRoundedIcon />}
                         variant="contained"
+                        onClick={handleGeneratePlan}
+                        disabled={loading}
                         sx={{
                           textTransform: "none",
                           borderRadius: 3,
@@ -203,7 +232,7 @@ export default function DietDudeDashboard() {
                           "&:hover": { bgcolor: "#19B58E", boxShadow: "none" },
                         }}
                       >
-                        Generate Plan
+                        {loading ? "Generating..." : "Generate Plan"}
                       </Button>
                     </Stack>
                   </Stack>
@@ -228,10 +257,36 @@ export default function DietDudeDashboard() {
                   <CardContent sx={{ p: 4 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                       <Box>
-                        <Typography sx={{ fontSize: 24, fontWeight: 700, minHeight: 500 }}>Generated Plan</Typography>
+                        <Typography sx={{ fontSize: 24, fontWeight: 700 }}>Generated Plan</Typography>
                         <Typography sx={{ mt: 0.8, fontSize: 14, color: "rgba(0,0,0,0.95)" }}>
                           A chat-style response area for meals, grocery lists, and recipe links.
                         </Typography>
+                        <Box sx={{ mt: 2, minHeight: 350 }}>
+                          {error && (
+                            <Typography sx={{ color: "error.main", mb: 1.5 }}>{error}</Typography>
+                          )}
+
+                          {!loading && recipes.length === 0 && !error && (
+                            <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.7)" }}>
+                              Submit a query to fetch recipe matches.
+                            </Typography>
+                          )}
+
+                          {recipes.map((recipe) => (
+                            <Card key={recipe.id} sx={{ mb: 1.5, bgcolor: "#fff", border: "1px solid rgba(0,0,0,0.08)" }}>
+                              <CardContent>
+                                <Typography sx={{ fontSize: 18, fontWeight: 700 }}>
+                                  {recipe.name}
+                                </Typography>
+                                <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.65)" }}>
+                                  {recipe.cooking_time ? `${recipe.cooking_time} min` : "Cooking time N/A"}
+                                  {" • "}
+                                  {recipe.servings ? `${recipe.servings} servings` : "Servings N/A"}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </Box>
                       </Box>
                     </Stack>
                   </CardContent>

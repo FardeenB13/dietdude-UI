@@ -1,15 +1,34 @@
 import { useState } from "react";
 import { Box, Button, TextField, Typography, Paper } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import { api } from "../api";
 
 export default function Signup() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
-        fname: "",
-        lname: "",
+        first_name: "",
+        last_name: "",
         email: "",
         password: "",
     });
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            await api.signUp(form);
+            navigate("/login");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Sign up failed.";
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -18,14 +37,14 @@ export default function Signup() {
                     Sign Up
                 </Typography>
 
-                <form >
+                <form onSubmit={handleSubmit}>
                     <TextField fullWidth label="First Name" margin="normal"
-                        value={form.fname}
-                        onChange={(e) => setForm({ ...form, fname: e.target.value })}
+                        value={form.first_name}
+                        onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                     />
                     <TextField fullWidth label="Last Name" margin="normal"
-                        value={form.lname}
-                        onChange={(e) => setForm({ ...form, lname: e.target.value })}
+                        value={form.last_name}
+                        onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                     />
                     <TextField fullWidth label="Email" margin="normal"
                         value={form.email}
@@ -36,7 +55,12 @@ export default function Signup() {
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                     />
 
-                    <Button fullWidth variant="contained" sx={{ mt: 2 }} type="submit">
+                    {error && (
+                        <Typography color="error" sx={{ mt: 1, fontSize: 14 }}>
+                            {error}
+                        </Typography>
+                    )}
+                    <Button fullWidth variant="contained" sx={{ mt: 2 }} type="submit" disabled={loading}>
                         Sign Up
                     </Button>
 
