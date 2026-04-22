@@ -139,6 +139,12 @@ export type SignUpPayload = {
   password: string;
 };
 
+export type PreferencesPayload = {
+  diet: string;
+  budget: string;
+  shopping_frequency_value: number;
+  shopping_frequency_unit: "days" | "weeks";
+};
 
 export type Recipe = {
   id: number;
@@ -171,4 +177,10 @@ export const api = {
     ingredient?: string;
     search?: string;
   }) => request<Recipe[]>(apiPath("/recipes/"), {}, query),
+
+  updatePreferences: (payload: PreferencesPayload) =>
+    request<User>(apiPath("/user/preferences/"), {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
 };

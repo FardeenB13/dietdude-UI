@@ -257,9 +257,9 @@ export default function DietDudeDashboard() {
                   <CardContent sx={{ p: 4 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                       <Box>
-                        <Typography sx={{ fontSize: 24, fontWeight: 700 }}>Generated Plan</Typography>
+                        <Typography sx={{ fontSize: 24, fontWeight: 700 }}>Generated Grocery List</Typography>
                         <Typography sx={{ mt: 0.8, fontSize: 14, color: "rgba(0,0,0,0.95)" }}>
-                          A chat-style response area for meals, grocery lists, and recipe links.
+                          A chat-style response area for grocery lists.
                         </Typography>
                         <Box sx={{ mt: 2, minHeight: 350 }}>
                           {error && (
@@ -268,7 +268,6 @@ export default function DietDudeDashboard() {
 
                           {!loading && recipes.length === 0 && !error && (
                             <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.7)" }}>
-                              Submit a query to fetch recipe matches.
                             </Typography>
                           )}
 

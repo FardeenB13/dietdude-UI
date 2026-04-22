@@ -10,6 +10,14 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            const csrfToken = req.headers['x-csrftoken']
+            if (csrfToken) {
+              proxyReq.setHeader('x-csrftoken', csrfToken)
+            }
+          })
+        },
       },
     },
   },

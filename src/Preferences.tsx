@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import {
     Box,
     Typography,
@@ -10,28 +11,41 @@ import {
     ToggleButtonGroup,
     InputAdornment,
     OutlinedInput,
+    CircularProgress,
+    Alert,
 } from "@mui/material"
-import { Link as RouterLink } from "react-router-dom";
+
+import { api } from "./api"
 
 type FreqUnit = "days" | "weeks"
 
+// Diet choices that also exist in the backend DIET_CHOICES
+// Keys are display labels; values are the backend enum strings.
+const DIET_OPTIONS: { label: string; value: string }[] = [
+    { label: "No Restriction", value: "none" },
+    { label: "Vegetarian",     value: "vegetarian" },
+    { label: "Vegan",          value: "vegan" },
+    { label: "Halal",          value: "halal" },
+    { label: "Keto",           value: "keto" },
+]
+
 const Preferences = () => {
-    const [dietary, setDietary] = useState<Record<string, boolean>>({
-        Halal: false,
-        Kosher: false,
-        Vegetarian: false,
-        Vegan: false,
-        "Gluten-Free": false,
-        "Dairy-Free": false,
-        Keto: false,
+    const navigate = useNavigate()
 
-    
-    })
-
-    const [budget, setBudget] = useState<string>("")
-    const [freqNum, setFreqNum] = useState<string>("1")
+    // ── Local state ─────────────────────────────────────────────────────────
+    const [diet,     setDiet]     = useState<string>("none")
+    const [budget,   setBudget]   = useState<string>("")
+    const [freqNum,  setFreqNum]  = useState<string>("1")
     const [freqUnit, setFreqUnit] = useState<FreqUnit>("weeks")
 
+    const [loading, setLoading]   = useState(false)
+    const [error,   setError]     = useState<string | null>(null)
+
+    useEffect(() => {
+        fetch("/api/csrf/", { credentials: "include" })
+    }, [])
+
+    // ── Derived display values ───────────────────────────────────────────────
     const tripsPerMonth = useMemo(() => {
         const n = parseInt(freqNum) || 1
         return freqUnit === "days"
@@ -45,10 +59,7 @@ const Preferences = () => {
         return Math.round(b * tripsPerMonth)
     }, [budget, tripsPerMonth])
 
-    const handleDietaryChange = (label: string) => {
-        setDietary((prev) => ({ ...prev, [label]: !prev[label] }))
-    }
-
+    // ── Handlers ─────────────────────────────────────────────────────────────
     const handleFreqNumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value
         if (val === "" || (parseInt(val) >= 1 && parseInt(val) <= 99)) {
@@ -63,6 +74,56 @@ const Preferences = () => {
         }
     }
 
+    const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`
+        const parts = value.split(`; ${name}=`)
+        if (parts.length === 2) {
+            return parts.pop()!.split(";").shift()
+        }
+        return null
+    }
+
+    const handleContinue = async () => {
+    setError(null)
+    setLoading(true)
+
+    const csrfToken = getCookie("csrftoken")
+
+    try {
+        const response = await fetch("/api/user/preferences/", {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken || "",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                diet,
+                budget: budget || "0",
+                shopping_frequency_value: parseInt(freqNum) || 1,
+                shopping_frequency_unit: freqUnit,
+            }),
+        })
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}))
+            const message =
+                data?.detail ||
+                Object.values(data).flat().join(" ") ||
+                "Failed to save preferences."
+            setError(message)
+            return
+        }
+
+        navigate("/Dashboard")
+    } catch {
+        setError("Network error. Please try again.")
+    } finally {
+        setLoading(false)
+    }
+}
+
+    // ── Render ───────────────────────────────────────────────────────────────
     return (
         <Box
             sx={{
@@ -99,17 +160,23 @@ const Preferences = () => {
             {/* RIGHT CONTENT */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
 
+                {error && (
+                    <Alert severity="error" onClose={() => setError(null)}>
+                        {error}
+                    </Alert>
+                )}
+
                 {/* DIETARY RESTRICTIONS */}
                 <Box sx={cardStyle}>
                     <SectionTitle text="Dietary Restrictions" />
                     <FormGroup sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}>
-                        {Object.keys(dietary).map((label) => (
+                        {DIET_OPTIONS.map(({ label, value }) => (
                             <FormControlLabel
-                                key={label}
+                                key={value}
                                 control={
                                     <Checkbox
-                                        checked={dietary[label]}
-                                        onChange={() => handleDietaryChange(label)}
+                                        checked={diet === value}
+                                        onChange={() => setDiet(value)}
                                         sx={{
                                             color: "black",
                                             "&.Mui-checked": { color: "black" },
@@ -231,8 +298,8 @@ const Preferences = () => {
 
                 <Button
                     variant="contained"
-                    component={RouterLink}
-                    to="/Dashboard"
+                    onClick={handleContinue}
+                    disabled={loading}
                     sx={{
                         mt: 2,
                         backgroundColor: "#111",
@@ -241,9 +308,10 @@ const Preferences = () => {
                         py: 1.5,
                         fontWeight: 600,
                         "&:hover": { backgroundColor: "#000" },
+                        "&.Mui-disabled": { backgroundColor: "#555", color: "#aaa" },
                     }}
                 >
-                    CONTINUE
+                    {loading ? <CircularProgress size={22} sx={{ color: "#fff" }} /> : "CONTINUE"}
                 </Button>
 
             </Box>
