@@ -90,7 +90,7 @@ const Preferences = () => {
     const csrfToken = getCookie("csrftoken")
 
     try {
-        const response = await fetch("/api/user/preferences/", {
+        const saveResponse = await fetch("/api/user/preferences/", {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
@@ -105,8 +105,8 @@ const Preferences = () => {
             }),
         })
 
-        if (!response.ok) {
-            const data = await response.json().catch(() => ({}))
+        if (!saveResponse.ok) {
+            const data = await saveResponse.json().catch(() => ({}))
             const message =
                 data?.detail ||
                 Object.values(data).flat().join(" ") ||
@@ -114,7 +114,23 @@ const Preferences = () => {
             setError(message)
             return
         }
+        
+        const generateResponse = await fetch("/api/grocery-list/generate/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken || "",
+            },
+            credentials: "include",
+        })
 
+        if (!generateResponse.ok) {
+            const data = await generateResponse.json().catch(() => ({}))
+            const message =
+                data?.detail || "Preferences saved, but grocery list generation failed."
+            setError(message)
+            return
+        }
         navigate("/Dashboard")
     } catch {
         setError("Network error. Please try again.")

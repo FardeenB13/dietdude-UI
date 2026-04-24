@@ -1,56 +1,71 @@
-import { Box, Typography, Avatar, Button, Card, CardContent, Chip,
-        InputAdornment, Stack, TextField,
-        Paper, } from "@mui/material"
+import {
+  Box,
+  Typography,
+  Avatar,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  InputAdornment,
+  Stack,
+  TextField,
+  Paper,
+} from "@mui/material"
 
-import AddIcon from "@mui/icons-material/Add";
-import TuneIcon from "@mui/icons-material/Tune";
-import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-
-import React, { useState } from 'react';
-import { api, type Recipe } from "./api";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded"
+import React, { useEffect, useState } from "react"
 
 export default function DietDudeDashboard() {
-  const [searchText, setSearchText] = useState("");
-  const [prompt, setPrompt] = useState("");
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [searchText, setSearchText] = useState("")
+  const [prompt, setPrompt] = useState("")
+  const [groceryList, setGroceryList] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
-  const handleGeneratePlan = async () => {
-    setLoading(true);
-    setError("");
+  useEffect(() => {
+    const loadLatestGroceryList = async () => {
+      setLoading(true)
+      setError("")
 
-    try {
-      const result = await api.listRecipes({
-        search: searchText || prompt,
-      });
-      setRecipes(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load recipes.";
-      setError(message);
-    } finally {
-      setLoading(false);
+      try {
+        const response = await fetch("/api/grocery-list/latest/", {
+          method: "GET",
+          credentials: "include",
+        })
+
+        const data = await response.json().catch(() => ({}))
+
+        if (response.status === 404) {
+          setGroceryList("")
+          return
+        }
+
+        if (!response.ok) {
+          throw new Error(data?.detail || "Failed to load grocery list.")
+        }
+
+        setGroceryList(data.raw_text || "")
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load grocery list."
+        setError(message)
+      } finally {
+        setLoading(false)
+      }
     }
-  };
+
+    loadLatestGroceryList()
+  }, [])
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
         display: "flex",
-        //bgcolor: "#212121",
-        //color: "#ECECEC",
         fontFamily: "Inter, sans-serif",
       }}
     >
-      <Box
-        sx={{
-          width: 0,
-          display: "none",
-        }}
-      >
-
+      <Box sx={{ width: 0, display: "none" }}>
         <Box sx={{ mt: "auto", p: 2, borderTop: "1px solid rgba(0,0,0,0.95)" }}>
           <Card
             sx={{
@@ -115,7 +130,7 @@ export default function DietDudeDashboard() {
         </Box>
 
         <Box sx={{ flex: 1, px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>
-          <Box sx={{ maxWidth: 1200, ml : 0}}>
+          <Box sx={{ maxWidth: 1200, ml: 0 }}>
             <Stack spacing={4}>
               <Box sx={{ textAlign: "left" }}>
                 <Chip
@@ -149,7 +164,7 @@ export default function DietDudeDashboard() {
                     color: "rgba(0,0,0,0.56)",
                   }}
                 >
-                  Enter restrictions, preferences, shopping frequency, or budget to generate meal ideas, grocery lists, and recipe-ready inspiration.
+                  Your latest grocery list is generated from the preferences you selected in the quiz.
                 </Typography>
               </Box>
 
@@ -165,7 +180,7 @@ export default function DietDudeDashboard() {
                 <Stack spacing={2}>
                   <TextField
                     fullWidth
-                    placeholder="Search meal plans, ingredients, restrictions, or recipes"
+                    placeholder="Your grocery list is generated automatically after submitting the quiz"
                     variant="outlined"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
@@ -178,67 +193,44 @@ export default function DietDudeDashboard() {
                     }}
                     sx={{
                       "& .MuiOutlinedInput-root": {
-                      bgcolor: "#ffffff",
-                      color: "#000000",
-                      "& fieldset": { borderColor: "rgba(0,0,0,0.95)" },
-                      "&:hover fieldset": { borderColor: "rgba(0,0,0,0.95)" },
-                      "&.Mui-focused fieldset": { borderColor: "#10A37F" },
-},
+                        bgcolor: "#ffffff",
+                        color: "#000000",
+                        "& fieldset": { borderColor: "rgba(0,0,0,0.95)" },
+                        "&:hover fieldset": { borderColor: "rgba(0,0,0,0.95)" },
+                        "&.Mui-focused fieldset": { borderColor: "#10A37F" },
+                      },
                       "& .MuiInputBase-input::placeholder": {
-                      color: "rgba(0,0,0,3.0)",
+                        color: "rgba(0,0,0,3.0)",
                       },
                     }}
                   />
 
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "flex-end" }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={4}
-                      placeholder="Example: I need 5 affordable dinners that are vegetarian, nut-free, and under $80 total."
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          alignItems: "flex-start",
-                          bgcolor: "#ffffff",
-                          color: "#F1F1F1",
-                          borderRadius: 3,
-                          "& fieldset": { borderColor: "rgba(0,0,0,0.95)" },
-                          "&:hover fieldset": { borderColor: "rgba(0,0,0,0.95)" },
-                          "&.Mui-focused fieldset": { borderColor: "rgba(16,163,127,0.5)" },
-                        },
-                        "& .MuiInputBase-input::placeholder": {
-                          color: "rgba(0,0,0,0.5)",
-                          opacity: 1,
-                        },
-                      }}
-                    />
-
-                    <Stack direction={{ xs: "row", md: "column" }} spacing={1.5} sx={{ minWidth: { md: 160 } }}>
-                      <Button
-                        endIcon={<SendRoundedIcon />}
-                        variant="contained"
-                        onClick={handleGeneratePlan}
-                        disabled={loading}
-                        sx={{
-                          textTransform: "none",
-                          borderRadius: 3,
-                          py: 1.4,
-                          bgcolor: "#10A37F",
-                          color: "#08110F",
-                          fontWeight: 700,
-                          boxShadow: "none",
-                          "&:hover": { bgcolor: "#19B58E", boxShadow: "none" },
-                        }}
-                      >
-                        {loading ? "Generating..." : "Generate Plan"}
-                      </Button>
-                    </Stack>
-                  </Stack>
+                  <TextField
+                    fullWidth
+                    multiline
+                    minRows={4}
+                    placeholder="This section can later be used for follow-up prompts. For now, the grocery list comes from your saved quiz preferences."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        alignItems: "flex-start",
+                        bgcolor: "#ffffff",
+                        color: "#111111",
+                        borderRadius: 3,
+                        "& fieldset": { borderColor: "rgba(0,0,0,0.95)" },
+                        "&:hover fieldset": { borderColor: "rgba(0,0,0,0.95)" },
+                        "&.Mui-focused fieldset": { borderColor: "rgba(16,163,127,0.5)" },
+                      },
+                      "& .MuiInputBase-input::placeholder": {
+                        color: "rgba(0,0,0,0.5)",
+                        opacity: 1,
+                      },
+                    }}
+                  />
                 </Stack>
               </Card>
-              
+
               <Box
                 sx={{
                   display: "grid",
@@ -256,41 +248,49 @@ export default function DietDudeDashboard() {
                 >
                   <CardContent sx={{ p: 4 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
-                      <Box>
+                      <Box sx={{ width: "100%" }}>
                         <Typography sx={{ fontSize: 24, fontWeight: 700 }}>Generated Grocery List</Typography>
                         <Typography sx={{ mt: 0.8, fontSize: 14, color: "rgba(0,0,0,0.95)" }}>
-                          A chat-style response area for grocery lists.
+                          Generated from your most recently submitted quiz preferences.
                         </Typography>
-                        <Box sx={{ mt: 2, minHeight: 350 }}>
-                          {error && (
-                            <Typography sx={{ color: "error.main", mb: 1.5 }}>{error}</Typography>
-                          )}
 
-                          {!loading && recipes.length === 0 && !error && (
+                        <Box sx={{ mt: 2, minHeight: 350 }}>
+                          {loading && (
                             <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.7)" }}>
+                              Loading grocery list...
                             </Typography>
                           )}
 
-                          {recipes.map((recipe) => (
-                            <Card key={recipe.id} sx={{ mb: 1.5, bgcolor: "#fff", border: "1px solid rgba(0,0,0,0.08)" }}>
-                              <CardContent>
-                                <Typography sx={{ fontSize: 18, fontWeight: 700 }}>
-                                  {recipe.name}
-                                </Typography>
-                                <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.65)" }}>
-                                  {recipe.cooking_time ? `${recipe.cooking_time} min` : "Cooking time N/A"}
-                                  {" • "}
-                                  {recipe.servings ? `${recipe.servings} servings` : "Servings N/A"}
-                                </Typography>
-                              </CardContent>
-                            </Card>
-                          ))}
+                          {error && !loading && (
+                            <Typography sx={{ color: "error.main", mb: 1.5 }}>{error}</Typography>
+                          )}
+
+                          {!loading && !groceryList && !error && (
+                            <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.7)" }}>
+                              No grocery list has been generated yet. Complete the quiz to create one.
+                            </Typography>
+                          )}
+
+                          {!loading && groceryList && (
+                            <Paper
+                              sx={{
+                                p: 2.5,
+                                bgcolor: "#fff",
+                                border: "1px solid rgba(0,0,0,0.08)",
+                                whiteSpace: "pre-wrap",
+                              }}
+                            >
+                              <Typography sx={{ fontSize: 15, lineHeight: 1.8, color: "#111" }}>
+                                {groceryList}
+                              </Typography>
+                            </Paper>
+                          )}
                         </Box>
                       </Box>
                     </Stack>
                   </CardContent>
                 </Card>
-          
+
                 <Stack spacing={3}>
                   <Card
                     sx={{
@@ -299,9 +299,7 @@ export default function DietDudeDashboard() {
                       border: "1px solid rgba(0,0,0,0.95)",
                       boxShadow: "none",
                     }}
-                  >
-                  </Card>
-
+                  />
                   <Card
                     sx={{
                       borderRadius: 4,
@@ -309,8 +307,7 @@ export default function DietDudeDashboard() {
                       border: "1px solid rgba(0,0,0,0.5)",
                       boxShadow: "none",
                     }}
-                  >
-                  </Card>
+                  />
                 </Stack>
               </Box>
             </Stack>
@@ -318,5 +315,5 @@ export default function DietDudeDashboard() {
         </Box>
       </Box>
     </Box>
-  );
-};
+  )
+}
