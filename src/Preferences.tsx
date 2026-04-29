@@ -33,7 +33,7 @@ const Preferences = () => {
     const navigate = useNavigate()
 
     // ── Local state ─────────────────────────────────────────────────────────
-    const [diet,     setDiet]     = useState<string>("none")
+    const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([])
     const [budget,   setBudget]   = useState<string>("")
     const [freqNum,  setFreqNum]  = useState<string>("1")
     const [freqUnit, setFreqUnit] = useState<FreqUnit>("weeks")
@@ -74,6 +74,14 @@ const Preferences = () => {
         }
     }
 
+    const handleDietChange = (value: string) => {
+        setDietaryRestrictions((prev) =>
+            prev.includes(value)
+                ? prev.filter((item) => item !== value)
+                : [...prev, value]
+        )
+    }
+
     const getCookie = (name: string) => {
         const value = `; ${document.cookie}`
         const parts = value.split(`; ${name}=`)
@@ -98,7 +106,8 @@ const Preferences = () => {
             },
             credentials: "include",
             body: JSON.stringify({
-                diet,
+                diet: dietaryRestrictions[0] || "none",
+                dietary_restrictions: dietaryRestrictions,
                 budget: budget || "0",
                 shopping_frequency_value: parseInt(freqNum) || 1,
                 shopping_frequency_unit: freqUnit,
@@ -191,8 +200,8 @@ const Preferences = () => {
                                 key={value}
                                 control={
                                     <Checkbox
-                                        checked={diet === value}
-                                        onChange={() => setDiet(value)}
+                                        checked={dietaryRestrictions.includes(value)}
+                                        onChange={() => handleDietChange(value)}
                                         sx={{
                                             color: "black",
                                             "&.Mui-checked": { color: "black" },
